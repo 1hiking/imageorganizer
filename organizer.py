@@ -84,7 +84,7 @@ def organize_images(source_path: Path, destination_path: Path):
                 shutil.copy2(file_path, unprocessable_files_path)
 
         print("[!] ALL IMAGES PROCESSED")
-        print("[!] FINAL DUPLICATE COUNT IS: " + duplicate_count)
+        print("[!] FINAL DUPLICATE COUNT IS: " , duplicate_count)
 
 
 if __name__ == "__main__":
@@ -113,4 +113,4 @@ if __name__ == "__main__":
         start = time.perf_counter()
         organize_images(base_path_source, base_path_destination)
         end = time.perf_counter() - start
-        print(time)
+        print(end)
