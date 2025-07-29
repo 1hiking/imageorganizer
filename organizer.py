@@ -1,6 +1,7 @@
 import os
 import argparse
 import shutil
+import time
 from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 from PIL.ExifTags import TAGS
@@ -109,4 +110,7 @@ if __name__ == "__main__":
     elif not base_path_destination.is_dir():
         print(f"[!] Error: {base_path_destination} is not a valid directory.")
     else:
+        start = time.perf_counter()
         organize_images(base_path_source, base_path_destination)
+        end = time.perf_counter() - start
+        print(time)
