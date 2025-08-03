@@ -111,12 +111,14 @@ if __name__ == "__main__":
         "-ips",
         help="Path to the directory containing images to process.",
         type=str,
+        required=True,
     )
     parser.add_argument(
         "--image_path_destination",
         "-ipd",
         help="Path to the directory where the images will be stored.",
         type=str,
+        required=True,
     )
     args = parser.parse_args()
 
