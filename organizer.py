@@ -63,9 +63,7 @@ def organize_images(
             try:
                 with Image.open(file_to_be_copied) as image:
                     if not disable_console:
-                        progress.set_description(
-                            desc=f"[!] File being processed: {file_to_be_copied}"
-                        )
+                        progress.write(f"[!] File being processed: {file_to_be_copied}")
 
                     image_exif: Exif = image.getexif()
 
@@ -134,8 +132,7 @@ def organize_images(
                 progress.write(
                     f"[x] Error processing a file, reason: {oserr}. File name: {file_to_be_copied}"
                 )
-
-    print(image_count, "files processed")
+    print(f"[✓] Finished processing. Total images handled: {image_count}")
 
 
 if __name__ == "__main__":
