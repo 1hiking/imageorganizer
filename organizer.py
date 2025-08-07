@@ -3,6 +3,8 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
+from uuid import uuid4
+
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import Exif
 from PIL.ImageFile import ImageFile
@@ -105,9 +107,17 @@ def organize_images(
                                 f"[✓] Image successfully copied: {path_destination_file}"
                             )
                     elif not disable_duplicates:
+                        # Send duplicate to a dedicated directory with a different filename
+                        unique_name = (
+                            file_to_be_copied.stem
+                            + "_"
+                            + uuid4().hex[:8]
+                            + file_to_be_copied.suffix
+                        )
+                        destination_file = directory_duplicates / unique_name
+
+                        shutil.copy2(file_to_be_copied, destination_file)
                         image_count += 1
-                        # Send duplicate to a dedicated directory
-                        shutil.copy2(file_to_be_copied, directory_duplicates)
                         if not disable_console:
                             progress.write(
                                 f"[!] Duplicated file: {file_to_be_copied}; will be copied to {directory_duplicates}"
@@ -156,7 +166,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--ignore-duplicates",
-        help="Ignore duplicate files. Useful when doing a re-run",
+        help="If set, duplicate images will not be copied. Useful when doing a re-run",
         action="store_true",
         required=False,
     )
