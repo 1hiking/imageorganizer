@@ -92,8 +92,8 @@ def organize_images(
 
                     # Copy image2
                     if not path_destination_file.exists():
-                        image_count += 1
                         shutil.copy2(file_to_be_copied, path_destination_file)
+                        image_count += 1
                         if not disable_console:
                             progress.write(
                                 f"[✓] Image successfully copied: {path_destination_file}"
