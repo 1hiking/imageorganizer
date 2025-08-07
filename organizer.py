@@ -71,18 +71,19 @@ def organize_images(
                     model_tag: str = get_exif_tag(image_exif, 272)  # 0x0110: Model
 
                     # Determine the path of the directory where it will be copied to
-                    if model_tag != UNKNOWN_DIRECTORY and make_tag != UNKNOWN_DIRECTORY:
-                        # For images which we know their model and make
-                        new_directory: Path = destination_path / make_tag / model_tag
-                    else:
-                        if not disable_console:
-                            progress.write(
-                                f"[!] Couldn't retrieve tags, defaulting to Unknown\n"
-                                f"for image: {file_to_be_copied}"
-                            )
-                        # Otherwise we just make a dir for the unknown
-                        new_directory: Path = (
-                            destination_path / "Unknown Camera and Model"
+                    new_directory: Path = (
+                        destination_path / make_tag / model_tag
+                        if model_tag != UNKNOWN_DIRECTORY
+                        and make_tag != UNKNOWN_DIRECTORY
+                        else destination_path / "Unknown Camera and Model"
+                    )
+
+                    if (
+                        model_tag == UNKNOWN_DIRECTORY or make_tag == UNKNOWN_DIRECTORY
+                    ) and not disable_console:
+                        progress.write(
+                            f"[!] Couldn't retrieve tags, defaulting to Unknown\n"
+                            f"for image: {file_to_be_copied}"
                         )
 
                     # The full path of the image
