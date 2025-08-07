@@ -2,15 +2,13 @@ import os
 import argparse
 import shutil
 import sys
-from argparse import Namespace
 from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import Exif
+from PIL.ImageFile import ImageFile
 from tqdm import tqdm
 
-# TODO: We still have many strings hardcoded
-# add flags for all of em?
-
+ImageFile.LOAD_TRUNCATED_FILES = True
 UNKNOWN_DIRECTORY: str = "Unknown"
 
 
@@ -129,7 +127,7 @@ def organize_images(
                             f"[x] Error attempting to process {file_to_be_copied} as an image file, it will be copied into {unprocessable_files_path}"
                         )
             except OSError as oserr:
-                # TODO: Fix truncated images
+                # This will occur normally with truncated files. We set Pillow to allow truncated files
                 progress.write(
                     f"[x] Error processing a file, reason: {oserr}. File name: {file_to_be_copied}"
                 )
@@ -166,7 +164,7 @@ if __name__ == "__main__":
         "--quiet", help="Supress output", action="store_true", required=False
     )
 
-    args: Namespace = parser.parse_args()
+    args = parser.parse_args()
 
     base_path_source: Path = Path(args.path_source).resolve()
     base_path_destination: Path = Path(args.path_destination).resolve()
