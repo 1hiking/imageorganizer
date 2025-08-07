@@ -137,10 +137,21 @@ def organize_images(
 
 
 if __name__ == "__main__":
-    # TODO: Improve description
     parser = argparse.ArgumentParser(
-        prog="Image Organizer", description="Organize images by camera Make/Model."
+        prog="Image Organizer",
+        description=(
+            "Organize image files by their camera Make and Model using EXIF metadata.\n"
+            "Images are sorted into folders (e.g., Canon/5D) under the destination path.\n"
+            "Unprocessable or duplicate files are moved to dedicated folders for review."
+        ),
+        epilog=(
+            "example usage:\n"
+            "  python organize.py --path-source ./DCIM --path-destination ./Sorted --ignore-duplicates\n"
+            "  python organize.py -ps C:/Photos -pd D:/SortedPhotos"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+
     parser.add_argument(
         "--path-source",
         "-ps",
