@@ -39,7 +39,6 @@ def organize_images(
     disable_duplicates: bool = False,
     disable_console: bool = False,
 ) -> None:
-    manufacturer_set = set()  # use set to avoid duplicates
     unprocessable_files_path: Path = destination_path / "Unprocessed"
     unprocessable_files_path.mkdir(parents=True, exist_ok=True)
     directory_duplicates: Path = destination_path / "Duplicated Images"
@@ -90,13 +89,7 @@ def organize_images(
 
                     # The full path of the image
                     path_destination_file: Path = new_directory / file_to_be_copied.name
-
-                    # Add image to the set and create the directory if not already there
-                    # Skip if it's empty string
-                    # TODO: Optimize this adding created_dirs = set()
-                    if make_tag and model_tag not in manufacturer_set:
-                        manufacturer_set.add(make_tag)
-                        new_directory.mkdir(parents=True, exist_ok=True)
+                    new_directory.mkdir(parents=True, exist_ok=True)
 
                     # Copy image2
                     if not path_destination_file.exists():
