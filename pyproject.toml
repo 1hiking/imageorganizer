@@ -11,6 +11,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mypy>=1.17.1",
     "ruff>=0.12.7",
     "snakeviz>=2.2.2",
+    "types-tqdm>=4.67.0.20250516",
 ]
