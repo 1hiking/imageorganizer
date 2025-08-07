@@ -6,6 +6,11 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pillow>=11.3.0",
-    "ruff>=0.12.7",
     "tqdm>=4.67.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.7",
+    "snakeviz>=2.2.2",
 ]

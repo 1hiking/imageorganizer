@@ -9,7 +9,7 @@ from PIL.Image import Exif
 from tqdm import tqdm
 
 # TODO: We still have many strings hardcoded
-# add flags fo all of em?
+# add flags for all of em?
 
 UNKNOWN_DIRECTORY: str = "Unknown"
 
@@ -26,12 +26,18 @@ def clean(string_to_parse: str) -> str:
     )
 
 
-def get_exif_tag(exif_data: Exif, tag_id: int) -> str:
+def get_exif_tag(
+    exif_data: Exif,
+    tag_id: int,
+) -> str:
     return clean(exif_data.get(tag_id, "")) or UNKNOWN_DIRECTORY
 
 
 def organize_images(
-    source_path: Path, destination_path: Path, disable_duplicates: bool
+    source_path: Path,
+    destination_path: Path,
+    disable_duplicates: bool = False,
+    disable_console: bool = False,
 ) -> None:
     manufacturer_set = set()  # use set to avoid duplicates
     unprocessable_files_path: Path = destination_path / "Unprocessed"
@@ -40,23 +46,27 @@ def organize_images(
     directory_duplicates.mkdir(parents=True, exist_ok=True)
     image_count: int = 0
 
-    # Walk over all the files, tqdm will not create a bar because it doesn't have lens it's an iterator
+    # Walk over all the files, tqdm will not create a bar because it doesn't have lens it's a generator
     for root, dirs, files in tqdm(
         os.walk(source_path),
         desc="Walking dirs",
         dynamic_ncols=True,
+        disable=disable_console,
     ):
-        # Iterate over them
-        progress = tqdm(files, desc="Processing files", dynamic_ncols=True)
+        # Iterate over the files in the current directory chosen
+        progress = tqdm(
+            files, desc="Processing files", dynamic_ncols=True, disable=disable_console
+        )
         for file in progress:
             # This is what we want to copy
             file_to_be_copied: Path = Path(root) / file
 
             try:
                 with Image.open(file_to_be_copied) as image:
-                    progress.set_description(
-                        desc=f"[!] File being processed: {file_to_be_copied}"
-                    )
+                    if not disable_console:
+                        progress.set_description(
+                            desc=f"[!] File being processed: {file_to_be_copied}"
+                        )
 
                     image_exif: Exif = image.getexif()
 
@@ -68,10 +78,11 @@ def organize_images(
                         # For images which we know their model and make
                         new_directory: Path = destination_path / make_tag / model_tag
                     else:
-                        progress.write(
-                            f"[!] Couldn't retrieve tags, defaulting to Unknown\n"
-                            f"for image: {file_to_be_copied}"
-                        )
+                        if not disable_console:
+                            progress.write(
+                                f"[!] Couldn't retrieve tags, defaulting to Unknown\n"
+                                f"for image: {file_to_be_copied}"
+                            )
                         # Otherwise we just make a dir for the unknown
                         new_directory: Path = (
                             destination_path / "Unknown Camera and Model"
@@ -87,32 +98,41 @@ def organize_images(
                         manufacturer_set.add(make_tag)
                         new_directory.mkdir(parents=True, exist_ok=True)
 
-                    # Copy image
+                    # Copy image2
                     if not path_destination_file.exists():
                         image_count += 1
                         shutil.copy2(file_to_be_copied, path_destination_file)
-                        progress.write(
-                            f"[✓] Image successfully copied: {path_destination_file}"
-                        )
+                        if not disable_console:
+                            progress.write(
+                                f"[✓] Image successfully copied: {path_destination_file}"
+                            )
                     elif not disable_duplicates:
                         image_count += 1
                         # Send duplicate to a dedicated directory
-                        progress.write(
-                            f"[!] Duplicated file: {file_to_be_copied}; will be copied to {directory_duplicates}"
-                        )
                         shutil.copy2(file_to_be_copied, directory_duplicates)
+                        if not disable_console:
+                            progress.write(
+                                f"[!] Duplicated file: {file_to_be_copied}; will be copied to {directory_duplicates}"
+                            )
                     else:
-                        progress.write(
-                            f"[!] Duplicated file: {file_to_be_copied} will be ignored!"
-                        )
+                        if not disable_console:
+                            progress.write(
+                                f"[!] Duplicated file: {file_to_be_copied} will be ignored!"
+                            )
 
             except UnidentifiedImageError:
                 if not disable_duplicates:
                     image_count += 1
-                    progress.write(
-                        f"[x] Error attempting to process {file_to_be_copied} as an image file, it will be copied into {unprocessable_files_path}"
-                    )
                     shutil.copy2(file_to_be_copied, unprocessable_files_path)
+                    if not disable_duplicates:
+                        progress.write(
+                            f"[x] Error attempting to process {file_to_be_copied} as an image file, it will be copied into {unprocessable_files_path}"
+                        )
+            except OSError as oserr:
+                # TODO: Fix truncated images
+                progress.write(
+                    f"[x] Error processing a file, reason: {oserr}. File name: {file_to_be_copied}"
+                )
 
     print(image_count, "files processed")
 
@@ -160,5 +180,6 @@ if __name__ == "__main__":
                 base_path_source,
                 base_path_destination,
                 args.ignore_duplicates,
+                args.quiet,
             )
         )
