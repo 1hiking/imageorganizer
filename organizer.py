@@ -123,7 +123,7 @@ def organize_images(
                 if not disable_duplicates:
                     image_count += 1
                     shutil.copy2(file_to_be_copied, unprocessable_files_path)
-                    if not disable_duplicates:
+                    if not disable_console:
                         progress.write(
                             f"[x] Error attempting to process {file_to_be_copied} as an image file, it will be copied into {unprocessable_files_path}"
                         )
