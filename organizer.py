@@ -10,7 +10,7 @@ from PIL.Image import Exif
 from PIL.ImageFile import ImageFile
 from tqdm import tqdm
 
-ImageFile.LOAD_TRUNCATED_FILES = True
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 UNKNOWN_DIRECTORY: str = "Unknown"
 
 
