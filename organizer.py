@@ -18,11 +18,7 @@ def clean(string_to_parse: str) -> str:
     if not string_to_parse:
         return ""
     return (
-        str(string_to_parse)
-        .replace("\x00", "")
-        .strip()
-        .replace("/", "_")
-        .replace("\\", "_")
+        string_to_parse.replace("\x00", "").strip().replace("/", "_").replace("\\", "_")
     )
 
 
