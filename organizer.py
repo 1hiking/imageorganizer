@@ -32,9 +32,9 @@ def get_exif_tag(
 def organize_images(
     source_path: Path,
     destination_path: Path,
-    disable_duplicates: bool = False,
-    disable_console: bool = False,
-) -> None:
+    disable_duplicates: bool,
+    disable_console: bool,
+) -> int:
     unprocessable_files_path: Path = destination_path / "Unprocessed"
     unprocessable_files_path.mkdir(parents=True, exist_ok=True)
     directory_duplicates: Path = destination_path / "Duplicated Images"
@@ -130,6 +130,7 @@ def organize_images(
                     f"[x] Error processing a file, reason: {oserr}. File name: {file_to_be_copied}"
                 )
     print(f"[✓] Finished processing. Total images handled: {image_count}")
+    return 0
 
 
 if __name__ == "__main__":
