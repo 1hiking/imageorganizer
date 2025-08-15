@@ -1,13 +1,26 @@
+[build-system]
+requires = ["uv_build >= 0.8.4, <0.9.0"]
+build-backend = "uv_build"
+
 [project]
 name = "imageorganizer"
-version = "2.1.0"
+version = "3.0.0"
 description = "Organize images by camera Make/Model."
 readme = "README.md"
-requires-python = ">=3.12"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.9"
 dependencies = [
     "pillow>=11.3.0",
     "tqdm>=4.67.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/1hiking/imageorganizer"
+Repository = "https://github.com/1hiking/imageorganizer"
+Issues =  "https://github.com/1hiking/imageorganizer/issues"
+
+[project.scripts]
+imageorganizer = "imageorganizer.cli:main"
 
 [dependency-groups]
 dev = [

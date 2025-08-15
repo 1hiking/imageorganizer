@@ -1,13 +1,10 @@
 import os
-import argparse
 import shutil
-import sys
 from pathlib import Path
 from uuid import uuid4
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError, ImageFile
 from PIL.Image import Exif
-from PIL.ImageFile import ImageFile
 from tqdm import tqdm
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -65,6 +62,9 @@ def organize_images(
 
                     make_tag: str = get_exif_tag(image_exif, 271)  # 0x010F: Make
                     model_tag: str = get_exif_tag(image_exif, 272)  # 0x0110: Model
+                    # date_tag: str = get_exif_tag(
+                    #    image_exif, 36867
+                    # )  # 0x9003: DateTimeOriginal
 
                     # Determine the path of the directory where it will be copied to
                     new_directory: Path = (
@@ -87,6 +87,10 @@ def organize_images(
                     new_directory.mkdir(parents=True, exist_ok=True)
 
                     # Copy image2
+                    # TODO: Files with same make/model but different content can lead to the system thinking they are a duplicate
+                    # We can solve this by renaming them:
+                    # - based on their exif date
+                    # - based on their unix date
                     if not path_destination_file.exists():
                         shutil.copy2(file_to_be_copied, path_destination_file)
                         image_count += 1
@@ -131,62 +135,3 @@ def organize_images(
                 )
     print(f"[✓] Finished processing. Total images handled: {image_count}")
     return 0
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="Image Organizer",
-        description=(
-            "Organize image files by their camera Make and Model using EXIF metadata.\n"
-            "Images are sorted into folders (e.g., Canon/5D) under the destination path.\n"
-            "Unprocessable or duplicate files are moved to dedicated folders for review."
-        ),
-        epilog=(
-            "example usage:\n"
-            "  python organize.py --path-source ./DCIM --path-destination ./Sorted --ignore-duplicates\n"
-            "  python organize.py -ps C:/Photos -pd D:/SortedPhotos"
-        ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    parser.add_argument(
-        "--path-source",
-        "-ps",
-        help="Path to the directory containing images to process.",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "--path-destination",
-        "-pd",
-        help="Path to the directory where the images will be stored.",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "--ignore-duplicates",
-        help="If set, duplicate images will not be copied. Useful when doing a re-run",
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--quiet", help="Supress output", action="store_true", required=False
-    )
-
-    args = parser.parse_args()
-
-    base_path_source: Path = Path(args.path_source).resolve()
-    base_path_destination: Path = Path(args.path_destination).resolve()
-    if not base_path_source.is_dir():
-        print(f"[!] Error: {base_path_source} is not a valid directory.")
-    elif not base_path_destination.is_dir():
-        print(f"[!] Error: {base_path_destination} is not a valid directory.")
-    else:
-        sys.exit(
-            organize_images(
-                base_path_source,
-                base_path_destination,
-                args.ignore_duplicates,
-                args.quiet,
-            )
-        )
