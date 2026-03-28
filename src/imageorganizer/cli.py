@@ -5,7 +5,7 @@ from pathlib import Path
 from .organizer import organize_images
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="Image Organizer",
         description=(
@@ -45,7 +45,7 @@ def main():
         "--quiet", help="Supress output", action="store_true", required=False
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     base_path_source: Path = Path(args.path_source).resolve()
     base_path_destination: Path = Path(args.path_destination).resolve()
@@ -54,11 +54,10 @@ def main():
     elif not base_path_destination.is_dir():
         print(f"[!] Error: {base_path_destination} is not a valid directory.")
     else:
-        sys.exit(
-            organize_images(
-                base_path_source,
-                base_path_destination,
-                args.ignore_duplicates,
-                args.quiet,
-            )
+        exit_code = organize_images(
+            base_path_source,
+            base_path_destination,
+            args.ignore_duplicates,
+            args.quiet,
         )
+        return exit_code

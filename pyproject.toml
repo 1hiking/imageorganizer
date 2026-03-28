@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "imageorganizer"
 version = "3.0.0"
-description = "Organize images by camera Make/Model."
+description = "Organize your directories of images using their metadata information."
 readme = "README.md"
 license = "GPL-3.0-or-later"
 requires-python = ">=3.9"
@@ -17,7 +17,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/1hiking/imageorganizer"
 Repository = "https://github.com/1hiking/imageorganizer"
-Issues =  "https://github.com/1hiking/imageorganizer/issues"
+Issues = "https://github.com/1hiking/imageorganizer/issues"
 
 [project.scripts]
 imageorganizer = "imageorganizer.cli:main"
@@ -25,7 +25,8 @@ imageorganizer = "imageorganizer.cli:main"
 [dependency-groups]
 dev = [
     "mypy>=1.17.1",
-    "ruff>=0.12.7",
-    "snakeviz>=2.2.2",
+    "pytest>=8.4.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.8",
     "types-tqdm>=4.67.0.20250516",
 ]
