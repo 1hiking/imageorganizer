@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f519567e-bad0-45b6-b8b2-96471fe66737" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/justfile" beforeDir="false" afterPath="$PROJECT_DIR$/justfile" afterDir="false" />
+    <list default="true" id="f519567e-bad0-45b6-b8b2-96471fe66737" name="Changes" comment="chore: add release task for just tooling, update workspace.xml">
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/imageorganizer/organizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/imageorganizer/organizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/uv.lock" beforeDir="false" afterPath="$PROJECT_DIR$/uv.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -200,6 +200,28 @@
       <option name="presentableId" value="Default" />
       <updated>1774731126938</updated>
     </task>
+    <task id="LOCAL-00001" summary="fix: remove unused dependencies">
+      <option name="closed" value="true" />
+      <created>1774736435660</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1774736435660</updated>
+    </task>
+    <task id="LOCAL-00002" summary="chore: add release task for just tooling, update workspace.xml">
+      <option name="closed" value="true" />
+      <created>1774736533804</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1774736533804</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="fix: remove unused dependencies" />
+    <MESSAGE value="chore: add release task for just tooling, update workspace.xml" />
+    <option name="LAST_COMMIT_MESSAGE" value="chore: add release task for just tooling, update workspace.xml" />
   </component>
 </project>

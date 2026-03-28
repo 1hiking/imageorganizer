@@ -25,8 +25,8 @@ def clean(string_to_parse: str) -> str:
 
 
 def get_exif_tag(
-        exif_data: Exif,
-        tag_id: int,
+    exif_data: Exif,
+    tag_id: int,
 ) -> str:
     return clean(exif_data.get(tag_id, "")) or UNKNOWN_DIRECTORY
 
@@ -42,10 +42,10 @@ def is_file_copiable(source: Path, destination: Path) -> bool:
 
 
 def organize_images(
-        source_path: Path,
-        destination_path: Path,
-        disable_duplicates: bool,
-        disable_console: bool,
+    source_path: Path,
+    destination_path: Path,
+    disable_duplicates: bool,
+    disable_console: bool,
 ) -> int:
     unprocessable_files_path = destination_path / "Unprocessed"
     unprocessable_files_path.mkdir(parents=True, exist_ok=True)
@@ -56,7 +56,7 @@ def organize_images(
     files = [f for f in source_path.rglob("*") if f.is_file()]
     # Walk over all the files, tqdm will not create a bar because it doesn't have lens it's a generator
     with tqdm(
-            files, desc="Processing", disable=disable_console, dynamic_ncols=True
+        files, desc="Processing", disable=disable_console, dynamic_ncols=True
     ) as progress:
         for file_to_copy in progress:
             try:
@@ -80,7 +80,7 @@ def organize_images(
                     )
 
                     if (
-                            model == UNKNOWN_DIRECTORY or make == UNKNOWN_DIRECTORY
+                        model == UNKNOWN_DIRECTORY or make == UNKNOWN_DIRECTORY
                     ) and not disable_console:
                         progress.write(
                             f"[!] Couldn't retrieve tags, defaulting to Unknown\n"
@@ -101,10 +101,10 @@ def organize_images(
                     elif not disable_duplicates:
                         # Send duplicate images to a dedicated directory with a different filename
                         unique_name = (
-                                file_to_copy.stem
-                                + "_"
-                                + uuid4().hex[:8]
-                                + file_to_copy.suffix
+                            file_to_copy.stem
+                            + "_"
+                            + uuid4().hex[:8]
+                            + file_to_copy.suffix
                         )
                         destination_file = directory_duplicates / unique_name
 
