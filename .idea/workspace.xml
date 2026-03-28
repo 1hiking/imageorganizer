@@ -2,21 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f519567e-bad0-45b6-b8b2-96471fe66737" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/justfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/test_organizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/organizeimages.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/imageorganizer.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/ruff.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/imageorganizer/__main__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/imageorganizer/__main__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/imageorganizer/cli.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/imageorganizer/cli.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/justfile" beforeDir="false" afterPath="$PROJECT_DIR$/justfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/imageorganizer/organizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/imageorganizer/organizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/uv.lock" beforeDir="false" afterPath="$PROJECT_DIR$/uv.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

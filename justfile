@@ -28,3 +28,6 @@ build: check
 # Clean build artifacts
 clean:
     rm -rf dist/ htmlcov/ .coverage
+
+release bump="patch": check build
+    uv run bump-my-version bump {{bump}}
