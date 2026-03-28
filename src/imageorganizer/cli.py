@@ -1,5 +1,4 @@
 import argparse
-import sys
 from pathlib import Path
 
 from .organizer import organize_images
