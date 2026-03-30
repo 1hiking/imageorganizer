@@ -1,5 +1,6 @@
 import filecmp
 import shutil
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -15,7 +16,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 UNKNOWN_DIRECTORY: str = "Unknown"
 
 
-def clean(string_to_parse: str) -> str:
+def clean(string_to_parse: str | None) -> str:
     """
     Sanitizes a string for use as a filesystem path component.
 
@@ -44,7 +45,7 @@ def clean(string_to_parse: str) -> str:
     )
 
 
-def get_exif_tag(exif_data: Exif, tag_id: int) -> str:
+def get_exif_tag(exif_data: Mapping[int, str], tag_id: int) -> str:
     """
     Retrieves and sanitizes an EXIF tag value.
 

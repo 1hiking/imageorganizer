@@ -8,7 +8,7 @@ test:
 
 # Type check
 typecheck:
-    uv run mypy .
+    uv run mypy . --check-untyped-defs
 
 # Lint
 lint:

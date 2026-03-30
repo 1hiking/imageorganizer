@@ -8,7 +8,7 @@ version = "3.0.0"
 description = "Organize your directories of images using their metadata information."
 readme = "README.md"
 license = "GPL-3.0-or-later"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "pillow>=11.3.0",
     "pymediainfo>=7.0.1",
