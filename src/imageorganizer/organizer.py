@@ -5,13 +5,29 @@ from uuid import uuid4
 
 from PIL import Image, ImageFile, UnidentifiedImageError
 from PIL.Image import Exif
-from tqdm import tqdm
+from rich.progress import Progress
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 UNKNOWN_DIRECTORY: str = "Unknown"
 
 
 def clean(string_to_parse: str) -> str:
+    """
+    Sanitizes a string for use as a filesystem path component.
+
+    Removes null bytes, strips whitespace, and replaces path-unsafe
+    characters: '/' and '\\' become '_', ':' becomes '-', spaces are removed.
+
+    Args:
+        string_to_parse: The string to sanitize.
+
+    Returns:
+        Sanitized string, or empty string if input is falsy.
+
+    Example:
+        >>> clean("hello world/foo:bar")
+        'helloworldfoo-bar'
+    """
     if not string_to_parse:
         return ""
     return (
@@ -24,10 +40,17 @@ def clean(string_to_parse: str) -> str:
     )
 
 
-def get_exif_tag(
-    exif_data: Exif,
-    tag_id: int,
-) -> str:
+def get_exif_tag(exif_data: Exif, tag_id: int) -> str:
+    """
+    Retrieves and sanitizes an EXIF tag value.
+
+    Args:
+        exif_data: EXIF metadata object to query.
+        tag_id: Numeric EXIF tag identifier.
+
+    Returns:
+        Cleaned tag value, or UNKNOWN_DIRECTORY if the tag is missing or empty.
+    """
     return clean(exif_data.get(tag_id, "")) or UNKNOWN_DIRECTORY
 
 
@@ -42,10 +65,10 @@ def is_file_copiable(source: Path, destination: Path) -> bool:
 
 
 def organize_images(
-    source_path: Path,
-    destination_path: Path,
-    disable_duplicates: bool,
-    disable_console: bool,
+        source_path: Path,
+        destination_path: Path,
+        disable_duplicates: bool,
+        disable_console: bool,
 ) -> int:
     unprocessable_files_path = destination_path / "Unprocessed"
     unprocessable_files_path.mkdir(parents=True, exist_ok=True)
@@ -53,16 +76,13 @@ def organize_images(
     directory_duplicates.mkdir(parents=True, exist_ok=True)
     image_count = 0
 
+    # Use rglob to get all the files
     files = [f for f in source_path.rglob("*") if f.is_file()]
-    # Walk over all the files, tqdm will not create a bar because it doesn't have lens it's a generator
-    with tqdm(
-        files, desc="Processing", disable=disable_console, dynamic_ncols=True
-    ) as progress:
-        for file_to_copy in progress:
+    with (Progress(disable=disable_console) as progress):
+        for file in progress.track(files, description="Organizing Images"):
             try:
-                with Image.open(file_to_copy) as image:
-                    if not disable_console:
-                        progress.write(f"[!] File being processed: {file_to_copy}")
+                with Image.open(file) as image:
+                    progress.console.print(f"[!] File being processed: {file}")
 
                     image_exif: Exif = image.getexif()
 
@@ -79,59 +99,46 @@ def organize_images(
                         else destination_path / "Unknown Camera and Model"
                     )
 
-                    if (
-                        model == UNKNOWN_DIRECTORY or make == UNKNOWN_DIRECTORY
-                    ) and not disable_console:
-                        progress.write(
+                    if model == UNKNOWN_DIRECTORY or make == UNKNOWN_DIRECTORY:
+                        progress.console.print(
                             f"[!] Couldn't retrieve tags, defaulting to Unknown\n"
-                            f"for image: {file_to_copy}"
+                            f"for image: {file}"
                         )
 
                     # The full path of the image
-                    path_destination_file = new_directory / file_to_copy.name
+                    path_destination_file = new_directory / file.name
                     new_directory.mkdir(parents=True, exist_ok=True)
 
-                    if is_file_copiable(file_to_copy, path_destination_file):
-                        shutil.copy2(file_to_copy, path_destination_file)
+                    if is_file_copiable(file, path_destination_file):
+                        shutil.copy2(file, path_destination_file)
                         image_count += 1
-                        if not disable_console:
-                            progress.write(
-                                f"[✓] Image successfully copied: {path_destination_file}"
-                            )
+                        progress.console.print(
+                            f"[✓] Image successfully copied: {path_destination_file}"
+                        )
                     elif not disable_duplicates:
                         # Send duplicate images to a dedicated directory with a different filename
-                        unique_name = (
-                            file_to_copy.stem
-                            + "_"
-                            + uuid4().hex[:8]
-                            + file_to_copy.suffix
-                        )
+                        unique_name = file.stem + "_" + uuid4().hex[:8] + file.suffix
                         destination_file = directory_duplicates / unique_name
 
-                        shutil.copy2(file_to_copy, destination_file)
+                        shutil.copy2(file, destination_file)
                         image_count += 1
-                        if not disable_console:
-                            progress.write(
-                                f"[!] Duplicated file: {file_to_copy}; will be copied to {directory_duplicates}"
-                            )
+                        progress.console.print(
+                            f"[!] Duplicated file: {file}; will be copied to {directory_duplicates}"
+                        )
                     else:
-                        if not disable_console:
-                            progress.write(
-                                f"[!] Duplicated file: {file_to_copy} will be ignored!"
-                            )
+                        progress.console.print(f"[!] Duplicated file: {file} will be ignored!")
 
             except UnidentifiedImageError:
                 if not disable_duplicates:
                     image_count += 1
-                    shutil.copy2(file_to_copy, unprocessable_files_path)
-                    if not disable_console:
-                        progress.write(
-                            f"[x] Error attempting to process {file_to_copy} as an image file, it will be copied into {unprocessable_files_path}"
-                        )
+                    shutil.copy2(file, unprocessable_files_path)
+                    progress.console.print(
+                        f"[x] Error attempting to process {file} as an image file, it will be copied into {unprocessable_files_path}"
+                    )
             except OSError as oserr:
-                # This will occur normally with truncated files. We set Pillow to allow truncated files
-                progress.write(
-                    f"[x] Error processing a file, reason: {oserr}. File name: {file_to_copy}"
+                progress.console.print(
+                    f"[x] Error processing a file, reason: {oserr}. File name: {file.name}"
                 )
-    print(f"[✓] Finished processing. Total images handled: {image_count}")
-    return 0
+
+        print(f"[✓] Finished processing. Total images handled: {image_count}")
+        return 0

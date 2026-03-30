@@ -4,7 +4,7 @@ default:
 
 # Run tests with coverage
 test:
-    uv run pytest tests/ --cov --cov-report=term-missing --cov-report=html
+    uv run pytest tests/ --cov --cov-report=term-missing --cov-report=html --cov-branch --cov-fail-under=80
 
 # Type check
 typecheck:
@@ -28,6 +28,3 @@ build: check
 # Clean build artifacts
 clean:
     rm -rf dist/ htmlcov/ .coverage
-
-release bump="patch": check build
-    uv run bump-my-version bump {{bump}}
