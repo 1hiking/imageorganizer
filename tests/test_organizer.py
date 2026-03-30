@@ -1,6 +1,7 @@
+from unittest.mock import patch, MagicMock
+
 import pytest
 from PIL import Image
-from unittest.mock import patch
 
 from imageorganizer.organizer import (
     clean,
@@ -8,6 +9,7 @@ from imageorganizer.organizer import (
     is_file_copiable,
     organize_images,
 )
+
 
 ## --- Unit Tests for Helpers ---
 
@@ -80,6 +82,29 @@ def test_organize_success_with_exif(setup_dirs):
     exit_code = organize_images(src, dst, disable_duplicates=True, disable_console=True)
     assert exit_code == 0
     assert (dst / "Sony" / "A7III" / "test.jpg").exists()
+
+
+def test_organize_success_with_mediainfo(setup_dirs):
+    src, dst = setup_dirs
+
+    mock_track = MagicMock()
+    mock_track.to_data.return_value = {
+        "encoded_date": "2024-06-21 13:56:56 UTC",
+        "tagged_date": None,
+    }
+    mock_media = MagicMock()
+    mock_media.tracks = [mock_track]
+
+    img_path = src / "test.mp4"
+    img_path.touch()
+
+    with patch("pymediainfo.MediaInfo.parse", return_value=mock_media):
+        exit_code = organize_images(
+            src, dst, disable_duplicates=True, disable_console=True
+        )
+
+    assert exit_code == 0
+    assert (dst / "2024" / "06" / "test.mp4").exists()
 
 
 def test_unidentified_image_error(setup_dirs):
