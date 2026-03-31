@@ -8,7 +8,13 @@ from uuid import uuid4
 from PIL import Image, ImageFile, UnidentifiedImageError
 from PIL.Image import Exif
 from pymediainfo import MediaInfo
-from rich.progress import Progress, TimeElapsedColumn
+from rich.progress import (
+    Progress,
+    TimeElapsedColumn,
+    BarColumn,
+    MofNCompleteColumn,
+    TextColumn,
+)
 
 from .constants import IMAGE_EXTENSIONS
 
@@ -82,6 +88,7 @@ def copy_file(
             f"[✓] Image successfully copied: {path_destination_file}"
         )
     elif not disable_duplicates:
+        directory_duplicates.mkdir(parents=True, exist_ok=True)
         # Send duplicate images to a dedicated directory with a different filename
         unique_name = file.stem + "_" + uuid4().hex[:8] + file.suffix
         destination_file = directory_duplicates / unique_name
@@ -103,14 +110,20 @@ def organize_images(
     unprocessable_files_path = destination_path / "Unprocessed"
     unprocessable_files_path.mkdir(parents=True, exist_ok=True)
     directory_duplicates = destination_path / "Duplicated Images"
-    directory_duplicates.mkdir(parents=True, exist_ok=True)
+    multimedia_path = destination_path / "Multimedia"
 
     # Use rglob to get all the files
     files = [f for f in source_path.rglob("*") if f.is_file()]
-    with Progress(TimeElapsedColumn(), disable=disable_console) as progress:
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        BarColumn(),
+        MofNCompleteColumn(),
+        disable=disable_console,
+    ) as progress:
         for file in progress.track(files, description="Organizing Images", total=None):
             progress.console.print(f"[!] File being processed: {file}")
-            if file.suffix in IMAGE_EXTENSIONS:
+            if file.suffix.lower() in IMAGE_EXTENSIONS:
                 try:
                     with Image.open(file) as image:
                         image_exif: Exif = image.getexif()
@@ -164,7 +177,7 @@ def organize_images(
                     date = datetime.fromtimestamp(file.stat().st_mtime)
                 year = date.strftime("%Y")
                 month = date.strftime("%m")
-                new_directory = destination_path / year / month
+                new_directory = multimedia_path / year / month
                 new_directory.mkdir(parents=True, exist_ok=True)
                 path_destination_file = new_directory / file.name
                 copy_file(
@@ -174,5 +187,7 @@ def organize_images(
                     path_destination_file,
                     progress,
                 )
-
+        progress.console.print(
+            "[bold green]✓ Done! All images organized successfully.[/bold green]"
+        )
         return 0
