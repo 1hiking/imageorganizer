@@ -4,11 +4,9 @@ import pytest
 from PIL import Image
 
 from imageorganizer.organizer import (
-    clean,
-    get_exif_tag,
-    is_file_copiable,
-    organize_images,
+    queue_images,
 )
+from imageorganizer.utils import clean, get_exif_tag, is_file_copiable
 
 
 ## --- Unit Tests for Helpers ---
@@ -79,7 +77,7 @@ def test_organize_success_with_exif(setup_dirs):
     exif[271], exif[272] = "Sony", "A7III"
     img.save(img_path, "JPEG", exif=exif)
 
-    exit_code = organize_images(src, dst, disable_duplicates=True, disable_console=True)
+    exit_code = queue_images(src, dst, disable_duplicates=True, disable_console=True)
     assert exit_code == 0
     assert (dst / "Sony" / "A7III" / "test.jpg").exists()
 
@@ -97,21 +95,21 @@ def test_organize_success_with_mediainfo(setup_dirs):
 
     img_path = src / "test.mp4"
     img_path.touch()
-
+    dst_mult_path = dst / "Multimedia"
     with patch("pymediainfo.MediaInfo.parse", return_value=mock_media):
-        exit_code = organize_images(
+        exit_code = queue_images(
             src, dst, disable_duplicates=True, disable_console=True
         )
 
     assert exit_code == 0
-    assert (dst / "2024" / "06" / "test.mp4").exists()
+    assert (dst_mult_path / "2024" / "06" / "test.mp4").exists()
 
 
 def test_unidentified_image_error(setup_dirs):
     src, dst = setup_dirs
     bad_file = src / "not_an_image.jpg"
     bad_file.write_text("fake")
-    organize_images(src, dst, disable_duplicates=False, disable_console=True)
+    queue_images(src, dst, disable_duplicates=False, disable_console=True)
     assert (dst / "Unprocessed" / "not_an_image.jpg").exists()
 
 
@@ -124,9 +122,9 @@ def test_duplicate_name_same_content_hits_uuid_block(setup_dirs):
     img_path = src / "dup.jpg"
     Image.new("RGB", (1, 1)).save(img_path)
 
-    organize_images(src, dst, disable_duplicates=False, disable_console=True)
+    queue_images(src, dst, disable_duplicates=False, disable_console=True)
 
-    organize_images(src, dst, disable_duplicates=False, disable_console=True)
+    queue_images(src, dst, disable_duplicates=False, disable_console=True)
 
     dup_dir = dst / "Duplicated Images"
     files = list(dup_dir.glob("dup_*.jpg"))
@@ -138,7 +136,7 @@ def test_os_error_handling(mock_open, setup_dirs, capsys):
     src, dst = setup_dirs
     (src / "error.jpg").write_text("dummy")
     mock_open.side_effect = OSError("Simulated drive failure")
-    organize_images(src, dst, disable_duplicates=True, disable_console=False)
+    queue_images(src, dst, disable_duplicates=True, disable_console=False)
     captured = capsys.readouterr()
     assert "Error processing a file" in captured.out
 
@@ -150,5 +148,5 @@ def test_parity_and_nested_walking(tmp_path):
     dst = tmp_path / "out"
     dst.mkdir()
     (sub / "nested.jpg").write_text("fake")
-    organize_images(src, dst, disable_duplicates=False, disable_console=True)
+    queue_images(src, dst, disable_duplicates=False, disable_console=True)
     assert (dst / "Unprocessed" / "nested.jpg").exists()

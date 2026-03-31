@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from .organizer import organize_images
+from .organizer import queue_images
 
 
 def main(argv=None):
@@ -53,7 +53,7 @@ def main(argv=None):
     elif not base_path_destination.is_dir():
         print(f"[!] Error: {base_path_destination} is not a valid directory.")
     else:
-        exit_code = organize_images(
+        exit_code = queue_images(
             base_path_source,
             base_path_destination,
             args.ignore_duplicates,
