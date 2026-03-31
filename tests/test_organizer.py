@@ -1,13 +1,13 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PIL import Image
 
+from imageorganizer.cli import ProcessorConfig
 from imageorganizer.organizer import (
     queue_images,
 )
 from imageorganizer.utils import clean, get_exif_tag, is_file_copiable
-
 
 ## --- Unit Tests for Helpers ---
 
@@ -61,29 +61,36 @@ def test_is_file_copiable_table_logic(tmp_path):
 
 
 @pytest.fixture
-def setup_dirs(tmp_path):
-    src = tmp_path / "source"
-    dst = tmp_path / "destination"
-    src.mkdir()
-    dst.mkdir()
-    return src, dst
+def base_config(tmp_path):
+    source = tmp_path / "source"
+    dest = tmp_path / "destination"
+    source.mkdir()
+    dest.mkdir()
+
+    return ProcessorConfig(
+        source=source,
+        destination=dest,
+        ignore_duplicates=False,
+        quiet=True,
+        dry_run=False,
+    )
 
 
-def test_organize_success_with_exif(setup_dirs):
-    src, dst = setup_dirs
+def test_organize_success_with_exif(base_config):
+    src, dst = base_config.source, base_config.destination
     img_path = src / "test.jpg"
     img = Image.new("RGB", (1, 1))
     exif = img.getexif()
     exif[271], exif[272] = "Sony", "A7III"
     img.save(img_path, "JPEG", exif=exif)
 
-    exit_code = queue_images(src, dst, disable_duplicates=True, disable_console=True)
+    exit_code = queue_images(base_config)
     assert exit_code == 0
     assert (dst / "Sony" / "A7III" / "test.jpg").exists()
 
 
-def test_organize_success_with_mediainfo(setup_dirs):
-    src, dst = setup_dirs
+def test_organize_success_with_mediainfo(base_config):
+    src, dst = base_config.source, base_config.destination
 
     mock_track = MagicMock()
     mock_track.to_data.return_value = {
@@ -97,34 +104,32 @@ def test_organize_success_with_mediainfo(setup_dirs):
     img_path.touch()
     dst_mult_path = dst / "Multimedia"
     with patch("pymediainfo.MediaInfo.parse", return_value=mock_media):
-        exit_code = queue_images(
-            src, dst, disable_duplicates=True, disable_console=True
-        )
+        exit_code = queue_images(base_config)
 
     assert exit_code == 0
     assert (dst_mult_path / "2024" / "06" / "test.mp4").exists()
 
 
-def test_unidentified_image_error(setup_dirs):
-    src, dst = setup_dirs
+def test_unidentified_image_error(base_config):
+    src, dst = base_config.source, base_config.destination
     bad_file = src / "not_an_image.jpg"
     bad_file.write_text("fake")
-    queue_images(src, dst, disable_duplicates=False, disable_console=True)
+    queue_images(base_config)
     assert (dst / "Unprocessed" / "not_an_image.jpg").exists()
 
 
-def test_duplicate_name_same_content_hits_uuid_block(setup_dirs):
+def test_duplicate_name_same_content_hits_uuid_block(base_config):
     """
     To hit the UUID renaming block, the file must be 'not copiable'.
     This happens when names ARE equal AND content IS equal.
     """
-    src, dst = setup_dirs
+    src, dst = base_config.source, base_config.destination
     img_path = src / "dup.jpg"
     Image.new("RGB", (1, 1)).save(img_path)
 
-    queue_images(src, dst, disable_duplicates=False, disable_console=True)
+    queue_images(base_config)
 
-    queue_images(src, dst, disable_duplicates=False, disable_console=True)
+    queue_images(base_config)
 
     dup_dir = dst / "Duplicated Images"
     files = list(dup_dir.glob("dup_*.jpg"))
@@ -132,11 +137,11 @@ def test_duplicate_name_same_content_hits_uuid_block(setup_dirs):
 
 
 @patch("PIL.Image.open")
-def test_os_error_handling(mock_open, setup_dirs, capsys):
-    src, dst = setup_dirs
+def test_os_error_handling(mock_open, base_config, capsys):
+    src = base_config.source
     (src / "error.jpg").write_text("dummy")
     mock_open.side_effect = OSError("Simulated drive failure")
-    queue_images(src, dst, disable_duplicates=True, disable_console=False)
+    queue_images(base_config)
     captured = capsys.readouterr()
     assert "Error processing a file" in captured.out
 
@@ -148,5 +153,12 @@ def test_parity_and_nested_walking(tmp_path):
     dst = tmp_path / "out"
     dst.mkdir()
     (sub / "nested.jpg").write_text("fake")
-    queue_images(src, dst, disable_duplicates=False, disable_console=True)
+    config = ProcessorConfig(
+        source=src,
+        destination=dst,
+        ignore_duplicates=False,
+        quiet=True,
+        dry_run=False,
+    )
+    queue_images(config)
     assert (dst / "Unprocessed" / "nested.jpg").exists()

@@ -1,6 +1,6 @@
 # Image Organizer
 
-A CLI tool that sorts images from a source directory into an organized folder tree based on camera EXIF data (Make and Model).
+A CLI tool that sorts images from a source directory into an organized folder tree based on file metadata.
 
 ## Features
 

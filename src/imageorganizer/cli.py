@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from .config import ProcessorConfig
 from .organizer import queue_images
 
 
@@ -43,20 +44,25 @@ def main(argv=None):
     parser.add_argument(
         "--quiet", help="Supress output", action="store_true", required=False
     )
+    parser.add_argument(
+        "--dry-run",
+        help="Don't actually copy images to destination folder",
+        action="store_true",
+        required=False,
+    )
 
     args = parser.parse_args(argv)
-
-    base_path_source: Path = Path(args.path_source).resolve()
-    base_path_destination: Path = Path(args.path_destination).resolve()
-    if not base_path_source.is_dir():
-        print(f"[!] Error: {base_path_source} is not a valid directory.")
-    elif not base_path_destination.is_dir():
-        print(f"[!] Error: {base_path_destination} is not a valid directory.")
+    config = ProcessorConfig(
+        source=Path(args.path_source).resolve(),
+        destination=Path(args.path_destination).resolve(),
+        ignore_duplicates=args.ignore_duplicates,
+        quiet=args.quiet,
+        dry_run=args.dry_run,
+    )
+    if error := config.validate():
+        print(f"[!] {error}")
+        return None
     else:
-        exit_code = queue_images(
-            base_path_source,
-            base_path_destination,
-            args.ignore_duplicates,
-            args.quiet,
-        )
+        # Now queue_images only needs ONE argument
+        exit_code = queue_images(config)
         return exit_code

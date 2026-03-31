@@ -13,7 +13,8 @@ from rich.progress import (
     TimeElapsedColumn,
 )
 
-from .constants import IMAGE_EXTENSIONS, UNKNOWN_DIRECTORY
+from .config import ProcessorConfig
+from .constants import UNKNOWN_DIRECTORY
 from .utils import get_exif_tag, is_file_copiable
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -21,17 +22,17 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def copy_file(
     directory_duplicates: Path,
-    disable_duplicates: bool,
     file: Path,
     path_destination_file: Path,
     progress: Progress,
+    config: ProcessorConfig,
 ):
     if is_file_copiable(file, path_destination_file):
         shutil.copy2(file, path_destination_file)
         progress.console.print(
             f"[✓] Image successfully copied: {path_destination_file}"
         )
-    elif not disable_duplicates:
+    elif not config.ignore_duplicates:
         directory_duplicates.mkdir(parents=True, exist_ok=True)
         # Send duplicate images to a dedicated directory with a different filename
         unique_name = file.stem + "_" + uuid4().hex[:8] + file.suffix
@@ -46,63 +47,50 @@ def copy_file(
 
 
 def queue_images(
-    source_path: Path,
-    destination_path: Path,
-    disable_duplicates: bool,
-    disable_console: bool,
+    config: ProcessorConfig,
 ) -> int:
     images_list = []
     videos_list = []
     # Use rglob to get all the files
-    files = [f for f in source_path.rglob("*") if f.is_file()]
+    files = [f for f in config.source.rglob("*") if f.is_file()]
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         TimeElapsedColumn(),
         BarColumn(),
         MofNCompleteColumn(),
-        disable=disable_console,
+        disable=config.quiet,
     ) as progress:
         for file in progress.track(files, description="Queueing Images", total=None):
-            progress.console.print(f"[!] File being queued: {file}")
-            if file.suffix.lower() in IMAGE_EXTENSIONS:
+            # We check if Pillow can process it rather than hardcoding our formats
+            if file.suffix.lower() in Image.registered_extensions():
                 images_list.append(file)
             else:
                 videos_list.append(file)
         progress.console.print(
             "[bold green]✓ Done! All images queued successfully.[/bold green]"
         )
-        process_files(
-            images_list,
-            videos_list,
-            destination_path,
-            disable_duplicates,
-            disable_console,
-        )
+        process_files(images_list, videos_list, config)
         return 0
 
 
 def process_files(
     images: list[Path],
     videos: list[Path],
-    destination_path: Path,
-    disable_duplicates: bool,
-    disable_console: bool,
+    config: ProcessorConfig,
 ):
-    unprocessable_files_path = destination_path / "Unprocessed"
+    unprocessable_files_path = config.destination / "Unprocessed"
     unprocessable_files_path.mkdir(parents=True, exist_ok=True)
-    directory_duplicates = destination_path / "Duplicated Images"
-    multimedia_path = destination_path / "Multimedia"
+    directory_duplicates = config.destination / "Duplicated Images"
+    multimedia_path = config.destination / "Multimedia"
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         TimeElapsedColumn(),
         BarColumn(),
         MofNCompleteColumn(),
-        disable=disable_console,
+        disable=config.quiet,
     ) as progress:
         progress.console.print(f"[!] Files being processed: {len(images)}")
-        for image in progress.track(
-            images, description="Processing images", total=len(images)
-        ):
+        for image in progress.track(images, description="Processing images"):
             progress.console.print(f"[!] Processing image: {image}")
             try:
                 with Image.open(image) as opened_image:
@@ -115,9 +103,9 @@ def process_files(
 
                     # Determine the path of the directory where it will be copied to
                     new_directory = (
-                        destination_path / make / model
+                        config.destination / make / model
                         if model != UNKNOWN_DIRECTORY and make != UNKNOWN_DIRECTORY
-                        else destination_path / "Unknown Camera and Model"
+                        else config.destination / "Unknown Camera and Model"
                     )
                     new_directory.mkdir(parents=True, exist_ok=True)
 
@@ -130,15 +118,11 @@ def process_files(
                     path_destination_file = new_directory / image.name
 
                 copy_file(
-                    directory_duplicates,
-                    disable_duplicates,
-                    image,
-                    path_destination_file,
-                    progress,
+                    directory_duplicates, image, path_destination_file, progress, config
                 )
 
             except UnidentifiedImageError:
-                if not disable_duplicates:
+                if not config.ignore_duplicates:
                     shutil.copy2(image, unprocessable_files_path)
                     progress.console.print(
                         f"[x] Error attempting to process {image} as an image file, it will be copied into {unprocessable_files_path}"
@@ -148,7 +132,7 @@ def process_files(
                     f"[x] Error processing a file, reason: {oserr}. File name: {image.name}"
                 )
         for video in progress.track(
-            videos, description="Processing videos", total=len(videos)
+            videos, description="Processing videos (large files might take a while)"
         ):
             progress.console.print(f"[!] Processing video: {video}")
             image_media = MediaInfo.parse(video)
@@ -164,9 +148,5 @@ def process_files(
             new_directory.mkdir(parents=True, exist_ok=True)
             path_destination_file = new_directory / video.name
             copy_file(
-                directory_duplicates,
-                disable_duplicates,
-                video,
-                path_destination_file,
-                progress,
+                directory_duplicates, video, path_destination_file, progress, config
             )
