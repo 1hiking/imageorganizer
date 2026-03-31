@@ -142,6 +142,7 @@ def test_os_error_handling(mock_open, base_config, capsys):
     (src / "error.jpg").write_text("dummy")
     mock_open.side_effect = OSError("Simulated drive failure")
     queue_images(base_config)
+    mock_open.side_effect = OSError("Simulated drive failure")
     captured = capsys.readouterr()
     assert "Error processing a file" in captured.out
 
