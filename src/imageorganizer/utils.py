@@ -1,4 +1,5 @@
 import filecmp
+from datetime import datetime
 from pathlib import Path
 from typing import Mapping
 
@@ -34,7 +35,7 @@ def clean(string_to_parse: str | None) -> str:
     )
 
 
-def get_exif_tag(exif_data: Mapping[int, str], tag_id: int) -> str:
+def get_exif_string(exif_data: Mapping[int, str], tag_id: int) -> str:
     """
     Retrieves and sanitizes an EXIF tag value.
 
@@ -45,7 +46,14 @@ def get_exif_tag(exif_data: Mapping[int, str], tag_id: int) -> str:
     Returns:
         Cleaned tag value, or UNKNOWN_DIRECTORY if the tag is missing or empty.
     """
-    return clean(exif_data.get(tag_id, "")) or UNKNOWN_DIRECTORY
+    return clean(exif_data.get(tag_id)) or UNKNOWN_DIRECTORY
+
+
+def get_exif_date(exif_data: Mapping[int, str], tag_id: int) -> datetime | None:
+    try:
+        return datetime.strptime(exif_data[tag_id], "%Y:%m:%d %H:%M:%S")
+    except (ValueError, TypeError, KeyError):
+        return None
 
 
 def is_file_copiable(source: Path, destination: Path) -> bool:

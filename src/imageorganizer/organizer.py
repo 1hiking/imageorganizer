@@ -17,7 +17,7 @@ from rich.progress import (
 
 from .config import ProcessorConfig
 from .constants import UNKNOWN_DIRECTORY
-from .utils import get_exif_tag, is_file_copiable
+from .utils import get_exif_date, get_exif_string, is_file_copiable
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -50,6 +50,7 @@ def copy_file(
     else:
         progress.console.print(f"[dim][!] Ignored:[/] {file.name}")
         progress.update(task_id, advance=1)
+    progress.refresh()
 
 
 def queue_images(
@@ -62,12 +63,13 @@ def queue_images(
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         TimeElapsedColumn(),
-        BarColumn(),
+        BarColumn(bar_width=30),
         MofNCompleteColumn(),
         disable=config.quiet,
         refresh_per_second=2,
+        auto_refresh=False,
     ) as progress:
-        for file in progress.track(files, description="Queueing Images", total=None):
+        for file in progress.track(files, description="Processing Images", total=None):
             # We check if Pillow can process it rather than hardcoding our formats
             if file.suffix.lower() in Image.registered_extensions():
                 images_list.append(file)
@@ -84,30 +86,36 @@ def process_images(images: list[Path], config: ProcessorConfig, progress: Progre
     unprocessable_files_path.mkdir(parents=True, exist_ok=True)
     directory_duplicates = config.destination / "Duplicated Images"
 
-    task_id = progress.add_task("[!] Processing images", total=len(images))
+    task_id = progress.add_task("[blue][!][/] Processing images", total=len(images))
     for image in images:
-        progress.update(task_id, description=f"[!] Processing image: {image.name}")
+        progress.update(
+            task_id, description=f"[blue][!][/] Processing image: {image.name}"
+        )
         try:
             with Image.open(image) as opened_image:
                 image_exif = opened_image.getexif()
-                make = get_exif_tag(image_exif, 271)  # 0x010F: Make
-                model = get_exif_tag(image_exif, 272)  # 0x0110: Model
-                # date_tag: str = get_exif_tag(
-                #    image_exif, 36867
-                # )  # 0x9003: DateTimeOriginal
-
+                make = get_exif_string(image_exif, 271)  # 0x010F: Make
+                model = get_exif_string(image_exif, 272)  # 0x0110: Model
+                date_tag = get_exif_date(image_exif, 36867)  # 0x9003: DateTimeOriginal
                 # Determine the path of the directory where it will be copied to
-                new_directory = (
-                    config.destination / make / model
-                    if model != UNKNOWN_DIRECTORY and make != UNKNOWN_DIRECTORY
-                    else config.destination / "Unknown Camera and Model"
-                )
+
+                if date_tag is not None:
+                    new_directory = (
+                        config.destination
+                        / make
+                        / model
+                        / date_tag.strftime("%Y")
+                        / date_tag.strftime("%B")
+                    )
+                else:
+                    new_directory = config.destination / make / model
+
                 new_directory.mkdir(parents=True, exist_ok=True)
 
                 if model == UNKNOWN_DIRECTORY or make == UNKNOWN_DIRECTORY:
                     progress.update(
                         task_id,
-                        description=f"[!] Couldn't retrieve tags, defaulting to Unknown for image: {image.name}",
+                        description=f"[yellow][!][/] No tags found, defaulting to Unknown for: {image.name}",
                     )
 
                 # The full path of the image to be moved
@@ -142,10 +150,12 @@ def process_videos(
     multimedia_path = config.destination / "Multimedia"
     directory_duplicates = config.destination / "Duplicated Images"
 
-    task_id = progress.add_task("[blue]Processing Videos", total=len(videos))
+    task_id = progress.add_task("[blue][!][/] Processing videos", total=len(videos))
     for video in videos:
         try:
-            progress.update(task_id, description=f"[!] Processing video: {video.name}")
+            progress.update(
+                task_id, description=f"[blue][!][/] Processing video: {video.name}"
+            )
             image_media = MediaInfo.parse(video)
             general = image_media.tracks[0].to_data()
             date_str = general.get("encoded_date") or general.get("tagged_date")

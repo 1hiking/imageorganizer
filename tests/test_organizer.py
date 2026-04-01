@@ -7,7 +7,7 @@ from imageorganizer.cli import ProcessorConfig
 from imageorganizer.organizer import (
     queue_images,
 )
-from imageorganizer.utils import clean, get_exif_tag, is_file_copiable
+from imageorganizer.utils import clean, get_exif_string, is_file_copiable
 
 ## --- Unit Tests for Helpers ---
 
@@ -20,8 +20,8 @@ def test_clean_utility():
 
 def test_get_exif_tag():
     mock_exif = {271: " Nikon ", 272: "D850"}
-    assert get_exif_tag(mock_exif, 271) == "Nikon"
-    assert get_exif_tag(mock_exif, 999) == "Unknown"
+    assert get_exif_string(mock_exif, 271) == "Nikon"
+    assert get_exif_string(mock_exif, 999) == "Unknown"
 
 
 def test_is_file_copiable_table_logic(tmp_path):
@@ -81,12 +81,12 @@ def test_organize_success_with_exif(base_config):
     img_path = src / "test.jpg"
     img = Image.new("RGB", (1, 1))
     exif = img.getexif()
-    exif[271], exif[272] = "Sony", "A7III"
+    exif[271], exif[272], exif[36867] = "Sony", "A7III", "2024:03:15 10:30:00"
     img.save(img_path, "JPEG", exif=exif)
 
     exit_code = queue_images(base_config)
     assert exit_code == 0
-    assert (dst / "Sony" / "A7III" / "test.jpg").exists()
+    assert (dst / "Sony" / "A7III" / "2024" / "March" / "test.jpg").exists()
 
 
 def test_organize_success_with_mediainfo(base_config):
