@@ -137,14 +137,25 @@ def test_duplicate_name_same_content_hits_uuid_block(base_config):
 
 
 @patch("PIL.Image.open")
-def test_os_error_handling(mock_open, base_config, capsys):
+def test_os_pillow_error_handling(mock_open, base_config, capsys):
     src = base_config.source
     (src / "error.jpg").write_text("dummy")
     mock_open.side_effect = OSError("Simulated drive failure")
     queue_images(base_config)
     mock_open.side_effect = OSError("Simulated drive failure")
     captured = capsys.readouterr()
-    assert "Error processing a file" in captured.out
+    assert "Simulated drive failure" in captured.out
+
+
+@patch("pymediainfo.MediaInfo.parse")
+def test_os_mediainfo_error_handling(mock_open, base_config, capsys):
+    src = base_config.source
+    (src / "error.mp4").write_text("dummy")
+    mock_open.side_effect = OSError("Simulated drive failure")
+    queue_images(base_config)
+    mock_open.side_effect = OSError("Simulated drive failure")
+    captured = capsys.readouterr()
+    assert "Video Error" in captured.out
 
 
 def test_parity_and_nested_walking(tmp_path):

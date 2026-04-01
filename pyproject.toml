@@ -26,10 +26,11 @@ imageorganizer = "imageorganizer.cli:main"
 [dependency-groups]
 dev = [
     "mypy>=1.17.1",
+    "py-spy>=0.4.1",
     "pytest>=8.4.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.8",
 ]
 
 [tool.coverage.run]
-omit = ["src/imageorganizer/cli.py"]
+omit = ["src/imageorganizer/cli.py", "tests/test_organizer.py"]

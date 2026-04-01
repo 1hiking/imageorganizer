@@ -28,3 +28,10 @@ build: check
 # Clean build artifacts
 clean:
     rm -rf dist/ htmlcov/ .coverage
+
+# Run: just profile "/absolute/path/to/source" "./local_dest"
+profile src_path dest_path:
+    uv run py-spy record -o profile.svg -- \
+    python -m imageorganizer \
+    -ps "{{src_path}}" \
+    -pd "{{dest_path}}"

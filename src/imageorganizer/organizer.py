@@ -65,6 +65,7 @@ def queue_images(
         BarColumn(),
         MofNCompleteColumn(),
         disable=config.quiet,
+        refresh_per_second=2,
     ) as progress:
         for file in progress.track(files, description="Queueing Images", total=None):
             # We check if Pillow can process it rather than hardcoding our formats
@@ -85,7 +86,7 @@ def process_images(images: list[Path], config: ProcessorConfig, progress: Progre
 
     task_id = progress.add_task("[!] Processing images", total=len(images))
     for image in images:
-        progress.update(task_id, description=f"[!] Processing image: {image}")
+        progress.update(task_id, description=f"[!] Processing image: {image.name}")
         try:
             with Image.open(image) as opened_image:
                 image_exif = opened_image.getexif()
@@ -144,7 +145,7 @@ def process_videos(
     task_id = progress.add_task("[blue]Processing Videos", total=len(videos))
     for video in videos:
         try:
-            progress.update(task_id, description=f"[!] Processing video: {video}")
+            progress.update(task_id, description=f"[!] Processing video: {video.name}")
             image_media = MediaInfo.parse(video)
             general = image_media.tracks[0].to_data()
             date_str = general.get("encoded_date") or general.get("tagged_date")
