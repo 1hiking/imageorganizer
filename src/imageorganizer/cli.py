@@ -9,8 +9,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="Image Organizer",
         description=(
-            "Organize image files by their camera Make and Model using EXIF metadata.\n"
-            "Images are sorted into folders (e.g., Canon/5D) under the destination path.\n"
+            "Organize multimedia files by their camera Make and Model using EXIF metadata.\n"
+            "Files are sorted into folders (e.g., Canon/5D) under the destination path.\n"
             "Unprocessable or duplicate files are moved to dedicated folders for review."
         ),
         epilog=(
@@ -24,20 +24,20 @@ def main(argv=None):
     parser.add_argument(
         "--path-source",
         "-ps",
-        help="Path to the directory containing images to process.",
+        help="Path to the directory containing files to be processed.",
         type=str,
         required=True,
     )
     parser.add_argument(
         "--path-destination",
         "-pd",
-        help="Path to the directory where the images will be stored.",
+        help="Path to an existing directory where the files will be copied to.",
         type=str,
         required=True,
     )
     parser.add_argument(
         "--ignore-duplicates",
-        help="If set, duplicate images will not be copied. Useful when doing a re-run",
+        help="If set, duplicate files will not be copied.",
         action="store_true",
         required=False,
     )
@@ -46,7 +46,7 @@ def main(argv=None):
     )
     parser.add_argument(
         "--dry-run",
-        help="Don't actually copy images to destination folder",
+        help="Don't actually copy files to destination folder",
         action="store_true",
         required=False,
     )

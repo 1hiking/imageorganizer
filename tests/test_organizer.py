@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -76,6 +77,22 @@ def base_config(tmp_path):
     )
 
 
+@pytest.fixture
+def base_config_dry_run(tmp_path):
+    source = tmp_path / "source"
+    dest = tmp_path / "destination"
+    source.mkdir()
+    dest.mkdir()
+
+    return ProcessorConfig(
+        source=source,
+        destination=dest,
+        ignore_duplicates=False,
+        quiet=True,
+        dry_run=True,
+    )
+
+
 def test_organize_success_with_exif(base_config):
     src, dst = base_config.source, base_config.destination
     img_path = src / "test.jpg"
@@ -136,26 +153,47 @@ def test_duplicate_name_same_content_hits_uuid_block(base_config):
     assert len(files) == 1
 
 
-@patch("PIL.Image.open")
-def test_os_pillow_error_handling(mock_open, base_config, capsys):
-    src = base_config.source
-    (src / "error.jpg").write_text("dummy")
-    mock_open.side_effect = OSError("Simulated drive failure")
-    queue_images(base_config)
-    mock_open.side_effect = OSError("Simulated drive failure")
-    captured = capsys.readouterr()
-    assert "Simulated drive failure" in captured.out
+def test_dry_run_flag(base_config_dry_run):
+    src, dst = base_config_dry_run.source, base_config_dry_run.destination
+    img_path = src / "test.jpg"
+    img = Image.new("RGB", (1, 1))
+    exif = img.getexif()
+    exif[271], exif[272], exif[36867] = "Sony", "A7III", "2024:03:15 10:30:00"
+    img.save(img_path, "JPEG", exif=exif)
+
+    exit_code = queue_images(base_config_dry_run)
+    assert exit_code == 0
+    assert not (dst / "Sony" / "A7III" / "2024" / "March" / "test.jpg").exists()
 
 
-@patch("pymediainfo.MediaInfo.parse")
-def test_os_mediainfo_error_handling(mock_open, base_config, capsys):
-    src = base_config.source
-    (src / "error.mp4").write_text("dummy")
-    mock_open.side_effect = OSError("Simulated drive failure")
-    queue_images(base_config)
-    mock_open.side_effect = OSError("Simulated drive failure")
-    captured = capsys.readouterr()
-    assert "Video Error" in captured.out
+@patch("PIL.Image.open", side_effect=OSError("Simulated drive failure"))
+def test_os_pillow_error_handling(mock_open, base_config):
+    (base_config.source / "error.jpg").touch()
+
+    with patch("rich.progress.Progress.update") as mock_update:
+        queue_images(base_config)
+
+    descriptions = [
+        call.kwargs.get("description", "") for call in mock_update.call_args_list
+    ]
+    assert any("System Error on error.jpg" in d for d in descriptions), (
+        f"Expected error description not found. Got: {descriptions}"
+    )
+
+
+@patch("pymediainfo.MediaInfo.parse", side_effect=OSError("Simulated drive failure"))
+def test_os_mediainfo_error_handling(mock_parse, base_config):
+    (base_config.source / "error.mp4").touch()
+
+    with patch("rich.progress.Progress.update") as mock_update:
+        queue_images(base_config)
+
+    descriptions = [
+        call.kwargs.get("description", "") for call in mock_update.call_args_list
+    ]
+    assert any("Video Error" in d for d in descriptions), (
+        f"Expected error description not found. Got: {descriptions}"
+    )
 
 
 def test_parity_and_nested_walking(tmp_path):
@@ -174,3 +212,23 @@ def test_parity_and_nested_walking(tmp_path):
     )
     queue_images(config)
     assert (dst / "Unprocessed" / "nested.jpg").exists()
+
+
+@patch("pymediainfo.MediaInfo.parse")
+def test_date_str_was_not_found(mock_parse, base_config):
+    mock_track = MagicMock()
+    mock_track.track_type = "General"
+    mock_track.to_data.return_value = {"encoded_date": None, "tagged_date": None}
+    mock_parse.return_value.tracks = [mock_track]
+
+    (base_config.source / "no_date.mp4").touch()
+
+    queue_images(base_config)
+
+    assert (
+        base_config.destination
+        / "Multimedia"
+        / datetime.now().strftime("%Y")
+        / datetime.now().strftime("%m")
+        / "no_date.mp4"
+    ).exists()

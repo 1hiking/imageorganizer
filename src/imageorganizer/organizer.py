@@ -1,4 +1,5 @@
 import shutil
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,11 @@ from .utils import get_exif_date, get_exif_string, is_file_copiable
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
+def dry_run_executor(src, dst):
+    print(f"[DRY RUN] Would copy {src} to {dst}")
+    return dst
+
+
 def copy_file(
     directory_duplicates: Path,
     file: Path,
@@ -29,9 +35,10 @@ def copy_file(
     progress: Progress,
     task_id: TaskID,
     config: ProcessorConfig,
+    copy_executor: Callable = shutil.copy2,
 ):
     if is_file_copiable(file, path_destination_file):
-        shutil.copy2(file, path_destination_file)
+        copy_executor(file, path_destination_file)
         progress.update(
             task_id,
             advance=1,
@@ -42,13 +49,14 @@ def copy_file(
         unique_name = file.stem + "_" + uuid4().hex[:8] + file.suffix
         destination_file = directory_duplicates / unique_name
 
-        shutil.copy2(file, destination_file)
-        progress.console.print(
-            f"[yellow][!] Duplicate:[/] {file.name} -> {directory_duplicates.name}"
+        copy_executor(file, destination_file)
+        progress.update(
+            task_id,
+            description=f"[yellow][!] Duplicate:[/] {file.name} -> {directory_duplicates.name}",
         )
         progress.update(task_id, advance=1)
     else:
-        progress.console.print(f"[dim][!] Ignored:[/] {file.name}")
+        progress.update(task_id, description=f"[dim][!] Ignored:[/] {file.name}")
         progress.update(task_id, advance=1)
     progress.refresh()
 
@@ -120,6 +128,7 @@ def process_images(images: list[Path], config: ProcessorConfig, progress: Progre
 
                 # The full path of the image to be moved
                 path_destination_file = new_directory / image.name
+            executor_strategy = dry_run_executor if config.dry_run else shutil.copy2
 
             copy_file(
                 directory_duplicates,
@@ -128,17 +137,29 @@ def process_images(images: list[Path], config: ProcessorConfig, progress: Progre
                 progress,
                 task_id,
                 config,
+                executor_strategy,
             )
 
         except UnidentifiedImageError:
             if not config.ignore_duplicates:
-                shutil.copy2(image, unprocessable_files_path)
-                progress.console.print(
-                    f"[yellow][x] Not a valid image:[/] {image.name}"
+                copy_file(
+                    directory_duplicates,
+                    image,
+                    unprocessable_files_path,
+                    progress,
+                    task_id,
+                    config,
+                )
+                progress.update(
+                    task_id,
+                    description=f"[yellow][x] Not a valid image:[/] {image.name}",
                 )
                 progress.update(task_id, advance=1)
         except OSError as e:
-            progress.console.print(f"[red][bold]![/] System Error on {image.name}: {e}")
+            progress.update(
+                task_id,
+                description=f"[red][bold]![/] System Error on {image.name}: {e}",
+            )
             progress.update(task_id, advance=1)
 
 
@@ -168,6 +189,8 @@ def process_videos(
             new_directory = multimedia_path / year / month
             new_directory.mkdir(parents=True, exist_ok=True)
             path_destination_file = new_directory / video.name
+            executor_strategy = dry_run_executor if config.dry_run else shutil.copy2
+
             copy_file(
                 directory_duplicates,
                 video,
@@ -175,7 +198,10 @@ def process_videos(
                 progress,
                 task_id,
                 config,
+                executor_strategy,
             )
         except Exception as e:
-            progress.console.print(f"[red][x] Video Error {video.name}: {e}[/]")
+            progress.update(
+                task_id, description=f"[red][x] Video Error {video.name}: {e}[/]"
+            )
             progress.update(task_id, advance=1)
