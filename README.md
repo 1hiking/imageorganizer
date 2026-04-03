@@ -3,7 +3,10 @@
 A CLI tool that sorts images from a source directory into an organized folder tree based on file metadata.
 
 ![PyPI - Version](https://img.shields.io/pypi/v/imageorganizer)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/imageorganizer)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/1hiking/imageorganizer/publish.yml)
+![PyPI - License](https://img.shields.io/pypi/l/imageorganizer)
 
 ## Features
 
