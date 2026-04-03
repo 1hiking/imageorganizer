@@ -2,6 +2,9 @@
 
 A CLI tool that sorts images from a source directory into an organized folder tree based on file metadata.
 
+![PyPI - Version](https://img.shields.io/pypi/v/imageorganizer)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/1hiking/imageorganizer/publish.yml)
+
 ## Features
 
 - Recursively scans a source directory for media files
@@ -26,6 +29,12 @@ pip install imageorganizer
 ```bash
 imageorganizer --path-source /path/to/photos --path-destination /path/to/output
 ```
+
+## Required dependencies
+
+- Pillow
+- pymediainfo
+- Rich
 
 ### Options
 
